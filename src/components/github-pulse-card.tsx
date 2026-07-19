@@ -90,7 +90,7 @@ export function GitHubPulseCard({ onAddTask }: { onAddTask: (task: SuggestedTask
         <EmptyState
           icon={<GitHubIcon />}
           title="Connect GitHub"
-          text="Sign in to pull recent activity from one of your repositories and turn it into board tasks. Read-only — MomentumBoard never writes to your repos."
+          text="Sign in to pull recent activity from one of your repositories and turn it into board tasks. Read-only — Grow Sprout never writes to your repos."
           action={<button className="button github-btn" onClick={() => signIn("github", { callbackUrl: typeof window !== "undefined" ? window.location.href : "/" })}><GitHubIcon /> Sign in with GitHub</button>}
         />
       </article>
