@@ -1,0 +1,182 @@
+// Grow Sprout — cohort database schema.
+// Phase 1: next-auth (Auth.js) adapter tables so GitHub users persist in Neon.
+// Domain models (Project/Task/RepoLink/TaskRequest) arrive in Phase 2.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]
+  createdAt     DateTime  @default(now())
+}
+
+// ---- Domain models ----
+// Date/timestamp fields are stored as ISO strings to match the app's existing
+// string-based date handling (formatDate/dateFromNow) and avoid timezone drift.
+
+model Project {
+  id               String            @id @default(cuid())
+  ownerId          String
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name             String
+  description      String
+  goal             String
+  deadline         String
+  status           String
+  createdAt        String
+  tasks            Task[]
+  milestones       Milestone[]
+  blockers         Blocker[]
+  checkIns         CheckIn[]
+  feedbackRequests FeedbackRequest[]
+  focusSessions    FocusSession[]
+  companion        Companion?
+
+  @@index([ownerId])
+}
+
+model Task {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title     String
+  status    String
+  dueDate   String
+  priority  String
+  notes     String?
+
+  @@index([projectId])
+}
+
+model Milestone {
+  id         String  @id @default(cuid())
+  projectId  String
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title      String
+  targetDate String
+  completed  Boolean @default(false)
+
+  @@index([projectId])
+}
+
+model Blocker {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  resolved    Boolean @default(false)
+  createdAt   String
+
+  @@index([projectId])
+}
+
+model CheckIn {
+  id             String  @id @default(cuid())
+  projectId      String
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  completedToday String
+  stuckOn        String
+  nextStep       String
+  feeling        String
+  createdAt      String
+
+  @@index([projectId])
+}
+
+model FeedbackRequest {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  topic     String
+  priority  String
+  resolved  Boolean @default(false)
+  createdAt String
+
+  @@index([projectId])
+}
+
+model FocusSession {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId      String?
+  taskTitle   String
+  minutes     Int
+  completed   Boolean @default(false)
+  interrupted Boolean @default(false)
+  note        String?
+  createdAt   String
+
+  @@index([projectId])
+}
+
+model Companion {
+  id        String        @id @default(cuid())
+  projectId String        @unique
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  water     Int           @default(0)
+  sunshine  Int           @default(0)
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id          String    @id @default(cuid())
+  companionId String
+  companion   Companion @relation(fields: [companionId], references: [id], onDelete: Cascade)
+  role        String
+  content     String
+  createdAt   String
+
+  @@index([companionId])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

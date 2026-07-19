@@ -1,0 +1,16 @@
+import type { Metadata } from "next";
+import { Space_Grotesk, Figtree, DM_Mono } from "next/font/google";
+import { AppShell } from "@/components/app-shell";
+import { ProjectProvider } from "@/context/project-context";
+import { AuthSessionProvider } from "@/components/session-provider";
+import "./globals.css";
+
+const bodyFont = Figtree({ subsets: ["latin"], variable: "--font-body" });
+const headingFont = Space_Grotesk({ subsets: ["latin"], variable: "--font-heading" });
+const monoFont = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
+
+export const metadata: Metadata = { title: "MomentumBoard", description: "A project management and motivation workspace for cohort builders." };
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <html lang="en"><body className={`${bodyFont.variable} ${headingFont.variable} ${monoFont.variable}`}><AuthSessionProvider><ProjectProvider><AppShell>{children}</AppShell></ProjectProvider></AuthSessionProvider></body></html>;
+}
