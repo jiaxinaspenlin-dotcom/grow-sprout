@@ -1,5 +1,9 @@
 # Grow Sprout
 
+**Live demo:** [grow-sprout-liart.vercel.app](https://grow-sprout-liart.vercel.app)
+
+> **Reviewers:** sign-in is GitHub OAuth, but you don't need your own GitHub to test the write path. Open [`/me`](https://grow-sprout-liart.vercel.app/me) → click **"Reviewer? Use the demo account"** → enter the demo password `demo`. That signs you into a shared `Demo Builder` account where you can create, edit, and delete projects and tasks. (Or use [`/api/auth/signin`](https://grow-sprout-liart.vercel.app/api/auth/signin) → **Demo account**.)
+
 Grow Sprout is a **shared cohort project-management platform with an AI motivation companion**, built for the Algorithmacy Summer 2026 cohort. Every builder gets their own project board — milestones, tasks, blockers, deadlines, daily check-ins, feedback requests, focus sessions, a companion plant, and a live momentum score — rolling up into a **cohort command center** where peers and mentors can see who is on track, who is blocked, who needs feedback, and who is losing momentum.
 
 It is deliberately three things at once:
