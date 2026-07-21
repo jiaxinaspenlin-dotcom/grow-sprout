@@ -250,3 +250,17 @@ footer { padding: 25px; text-align: center; color: #9297a7; font-size: 13px; bor
 .eyebrow, .pill-tag, .pulse-source, .cohort-momentum-copy span, .panel-kicker, .pulse-nba span, .next-action span, .checkin-top span, .checkin-grid p, .column-title b, .badge {
   font-family: var(--font-mono), monospace;
 }
+
+/* Status banners — cohort-load failures and mutation errors surfaced to the user */
+.status-banners { position: sticky; top: 72px; z-index: 25; display: flex; flex-direction: column; gap: 0; }
+.status-banner { display: flex; align-items: center; gap: 10px; padding: 11px max(24px, calc((100vw - 1180px) / 2)); font-size: 13px; font-weight: 600; }
+.status-banner svg { width: 16px; flex: 0 0 auto; }
+.status-banner span { flex: 1; min-width: 0; }
+.status-banner.warn { background: #fdf6e7; color: var(--amber); border-bottom: 1px solid #f0e3c0; }
+.status-banner.error { background: #fdecec; color: var(--red); border-bottom: 1px solid #f4cccc; }
+.status-banner .text-button { color: inherit; font-weight: 800; text-decoration: underline; background: transparent; border: 0; cursor: pointer; }
+.status-banner .icon-button svg { width: 15px; }
+.signin-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.checkin-private { display: flex; align-items: center; gap: 9px; padding: 20px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.checkin-private svg { width: 16px; flex: 0 0 auto; color: var(--purple); }
+@media (max-width: 620px) { .status-banners { top: 64px; } }

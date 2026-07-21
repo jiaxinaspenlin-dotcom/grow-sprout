@@ -13,7 +13,7 @@ import { CohortCard, Filter, FILTERS, StatCard } from "@/components/project-card
  * No create/edit actions live here; those belong on each builder's /me center.
  */
 export default function OverallDashboard() {
-  const { projects, hydrated, myUserId } = useProjects();
+  const { projects, hydrated, myUserId, loadFailed } = useProjects();
   const [filter, setFilter] = useState<Filter>("all");
 
   const stats = useMemo(() => cohortStats(projects), [projects]);
@@ -75,6 +75,8 @@ export default function OverallDashboard() {
       <section className="project-grid">{visible.map((project) => <CohortCard key={project.id} project={project} />)}</section>
     ) : projects.length ? (
       <EmptyState icon={<CheckIcon />} title="Nothing in this view" text="No projects match this filter right now — a good sign." action={<button className="button secondary" onClick={() => setFilter("all")}>Show all projects</button>} />
+    ) : loadFailed ? (
+      <EmptyState icon={<AlertIcon />} title="Couldn’t load the cohort board" text="This looks like a connection issue, not an empty cohort. Try again in a moment." />
     ) : (
       <EmptyState icon={<TargetIcon />} title="No projects yet" text="When builders sign in and add their projects, they show up here for the whole cohort." action={myUserId ? <Link href="/me" className="button primary">Go to my command center</Link> : undefined} />
     )}

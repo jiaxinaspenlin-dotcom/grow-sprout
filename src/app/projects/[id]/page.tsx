@@ -107,7 +107,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     <div className="content-card list-card">{project.feedbackRequests.length ? [...project.feedbackRequests].sort((a,b) => Number(a.resolved)-Number(b.resolved)).map(item => <FeedbackRow key={item.id} item={item} canEdit={canEdit} onToggle={() => save({ feedbackRequests: project.feedbackRequests.map(f => f.id === item.id ? { ...f, resolved: !f.resolved } : f) })} onDelete={() => save({ feedbackRequests: project.feedbackRequests.filter(f => f.id !== item.id) })} />) : <MiniEmpty text="No open feedback requests." />}</div>
 
     <SectionHeader title="Daily check-in" subtitle="A quick reflection to keep momentum visible." action={canEdit ? <button className="button secondary compact" onClick={() => setModal("checkin")}><PlusIcon/> New check-in</button> : undefined} />
-    <CheckInCard checkIn={project.checkIns[0]} canEdit={canEdit} onCreate={() => setModal("checkin")} />
+    <CheckInCard checkIn={project.checkIns[0]} canEdit={canEdit} owner={project.owner} onCreate={() => setModal("checkin")} />
 
     {canEdit && (
       <>
@@ -158,9 +158,13 @@ function BlockerRow({ item, canEdit, onToggle, onDelete }: { item: Blocker; canE
 function FeedbackRow({ item, canEdit, onToggle, onDelete }: { item: FeedbackRequest; canEdit: boolean; onToggle: () => void; onDelete: () => void }) { return <div className={`list-row feedback-row ${item.resolved ? "is-complete" : ""}`}><div className="feedback-icon"><MessageIcon/></div><div className="list-copy"><strong>{item.topic}</strong>{canEdit && <button onClick={onToggle}>{item.resolved ? "Reopen" : "Mark reviewed"}</button>}</div><span className={`badge ${statusTone[item.priority]}`}>{item.priority}</span><span className={`badge ${item.resolved ? "badge-green" : "badge-amber"}`}>{item.resolved ? "Reviewed" : "Open"}</span>{canEdit && <button className="tiny-icon" onClick={onDelete} aria-label="Delete feedback request"><TrashIcon/></button>}</div>; }
 function MiniEmpty({ text }: { text: string }) { return <div className="mini-empty">{text}</div>; }
 
-function CheckInCard({ checkIn, canEdit, onCreate }: { checkIn?: CheckIn; canEdit: boolean; onCreate: () => void }) {
+function CheckInCard({ checkIn, canEdit, owner, onCreate }: { checkIn?: CheckIn; canEdit: boolean; owner: string; onCreate: () => void }) {
   if (!checkIn) return <div className="content-card"><EmptyState icon={<BoltIcon/>} title="No check-ins yet" text="Capture today’s progress and decide what comes next." action={canEdit ? <button className="button primary" onClick={onCreate}>Create check-in</button> : undefined} /></div>;
-  return <article className="checkin-card"><div className="checkin-top"><span>Latest check-in</span><div className="checkin-meta">{checkIn.feeling && <span className="feeling-chip">Feeling: {checkIn.feeling}</span>}<time>{new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(checkIn.createdAt))}</time></div></div><div className="checkin-grid"><div><span className="checkin-symbol done"><CheckIcon/></span><p>Completed today</p><strong>{checkIn.completedToday}</strong></div><div><span className="checkin-symbol stuck"><AlertIcon/></span><p>Stuck on</p><strong>{checkIn.stuckOn || "Nothing right now"}</strong></div><div><span className="checkin-symbol next"><ArrowIcon/></span><p>Next step</p><strong>{checkIn.nextStep}</strong></div></div></article>;
+  const time = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(checkIn.createdAt));
+  // The sanitized cohort feed blanks reflection text for everyone but the owner.
+  const redacted = !canEdit && !checkIn.completedToday && !checkIn.nextStep;
+  if (redacted) return <article className="checkin-card"><div className="checkin-top"><span>Latest check-in</span><time>{time}</time></div><div className="checkin-private"><MessageIcon/> {owner}&apos;s daily reflections are private. The cohort board shows momentum and status, not personal notes.</div></article>;
+  return <article className="checkin-card"><div className="checkin-top"><span>Latest check-in</span><div className="checkin-meta">{checkIn.feeling && <span className="feeling-chip">Feeling: {checkIn.feeling}</span>}<time>{time}</time></div></div><div className="checkin-grid"><div><span className="checkin-symbol done"><CheckIcon/></span><p>Completed today</p><strong>{checkIn.completedToday}</strong></div><div><span className="checkin-symbol stuck"><AlertIcon/></span><p>Stuck on</p><strong>{checkIn.stuckOn || "Nothing right now"}</strong></div><div><span className="checkin-symbol next"><ArrowIcon/></span><p>Next step</p><strong>{checkIn.nextStep}</strong></div></div></article>;
 }
 
 function TaskForm({ initial, onClose, onSave }: { initial?: Task; onClose: () => void; onSave: (task: Task) => void }) {

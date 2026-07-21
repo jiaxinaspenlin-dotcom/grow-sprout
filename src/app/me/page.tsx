@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useProjects } from "@/context/project-context";
 import { cohortStats, momentumLabel } from "@/lib/utils";
@@ -14,6 +14,19 @@ import { CohortCard, StatCard } from "@/components/project-cards";
 export default function MyCommandCenter() {
   const { projects, hydrated, myUserId, myName, addProject } = useProjects();
   const [creating, setCreating] = useState(false);
+  const [demoEnabled, setDemoEnabled] = useState(false);
+
+  // Whether a reviewer demo login is offered (DEMO_PASSWORD set on the server).
+  useEffect(() => {
+    let active = true;
+    fetch("/api/github/config").then((r) => r.json()).then((d) => { if (active) setDemoEnabled(Boolean(d.demoEnabled)); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const demoSignIn = () => {
+    const password = window.prompt("Demo password (for reviewers):");
+    if (password) void signIn("demo", { password, redirectTo: "/me" });
+  };
 
   const mine = useMemo(() => projects.filter((p) => p.ownerId === myUserId), [projects, myUserId]);
   const stats = useMemo(() => cohortStats(mine), [mine]);
@@ -27,7 +40,12 @@ export default function MyCommandCenter() {
         icon={<GitHubIcon />}
         title="Sign in to open your command center"
         text="Your personal command center is where you plan your projects, track tasks, and keep your momentum visible to the cohort. Sign in with GitHub to get started."
-        action={<button className="button github-btn" onClick={() => signIn("github")}><GitHubIcon /> Sign in with GitHub</button>}
+        action={
+          <div className="signin-actions">
+            <button className="button github-btn" onClick={() => signIn("github")}><GitHubIcon /> Sign in with GitHub</button>
+            {demoEnabled && <button className="button secondary" onClick={demoSignIn}>Reviewer? Use the demo account</button>}
+          </div>
+        }
       />
     </div>;
   }

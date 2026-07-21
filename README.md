@@ -82,6 +82,9 @@ GITHUB_CLIENT_SECRET=...
 # Optional AI (companion + GitHub Pulse) — local Ollama is used by default:
 # OLLAMA_URL=http://localhost:11434
 # OLLAMA_MODEL=llama3.1:8b
+# Optional reviewer login — when set, adds a shared "Demo account" sign-in that
+# doesn't require a GitHub identity. Leave unset in a real cohort. See below.
+# DEMO_PASSWORD=some-long-shared-secret
 ```
 
 `.env.local` is gitignored and must never be committed. The Prisma CLI reads it too (via [prisma.config.ts](prisma.config.ts)), so there's one source of truth.
@@ -94,6 +97,14 @@ GITHUB_CLIENT_SECRET=...
    - Authorization callback URL: `http://localhost:3002/api/auth/callback/github`
    - For production: `https://YOUR-DOMAIN/api/auth/callback/github`
 3. **Auth secret** — `npx auth secret`, or any long random string.
+
+### Reviewer / demo access (optional)
+
+Sign-in is GitHub-OAuth-only by design, which means a reviewer can't test the authenticated write path without their own GitHub identity. Set `DEMO_PASSWORD` to enable a shared **Demo account** login:
+
+- A "Reviewer? Use the demo account" button appears on the sign-in gate (`/me`), and a "Demo account" option appears on `/api/auth/signin`.
+- It signs into a single persistent `Demo Builder` user, so create/edit/delete and the task board are all exercisable.
+- Leave `DEMO_PASSWORD` unset in a real cohort — it's a review convenience, not an account system.
 
 ### Enabling the live AI companion (optional)
 
@@ -179,12 +190,23 @@ Not built yet:
 
 ## Known limitations
 
-- Requires a Postgres database and GitHub OAuth to run at all — there is no offline/demo mode and no seeded sample data. A fresh database shows an empty cohort board.
-- The AI companion and GitHub Pulse need a local Ollama model for live responses; in serverless production they fall back to the rule-based coach.
+- **The deployed companion runs the rule-based coach, not a live LLM.** The companion and GitHub Pulse call a local Ollama model, which does not exist in a serverless environment like Vercel — so in production they use the deterministic, project-aware rule-based fallback unless you point `OLLAMA_URL` at a publicly reachable model host. The fallback is in-character and state-aware, but it is not a large language model. "AI-assisted guidance" on the live deploy means this fallback.
+- **Privacy model of the public board:** the cohort feed (`/`) is viewable signed-out, so it is deliberately sanitized server-side — it excludes raw daily check-in reflections and the private companion chat. Only aggregate signals, status, momentum, tasks, blockers, milestones, and feedback flags are exposed. A builder's own full data is overlaid only for that signed-in owner. What the cohort *does* see: your project's status, momentum, open blockers/feedback, and check-in recency (not the text).
+- **Concurrency:** saves sync the project graph with targeted per-row upserts (not a full wipe-and-recreate), so an edit no longer churns unrelated rows. But a save still writes the whole project the client holds, so two people editing the *same* project simultaneously is still effectively last-write-wins at the project level. Per-operation server actions would remove this; not yet done.
+- Requires a Postgres database and GitHub OAuth to run at all — there is no offline mode. Set `DEMO_PASSWORD` for a reviewer login (see above); otherwise a fresh database shows an empty cohort board with no seed data.
 - **GitHub Pulse** reads limited repo metadata only — it does **not** scan the full codebase, does **not** write to GitHub, and requires your approval before any suggested task is added.
 - **Private repo access** depends on OAuth permissions: the default `read:user` scope lists public repos; private repos require the broader `repo` scope.
+- **No cross-member assignment.** By design (see [docs/COHORT_PLAN.md](docs/COHORT_PLAN.md)), editing only happens on your own board, so tasks have no assignee — the intended mechanism for work crossing between builders is task requests, which is not built yet. The cohort board shows who is blocked, not who should help.
 - No real-time updates — the cohort board refreshes on navigation, not via websockets.
 - Dates are stored as ISO strings and rendered in the browser's local time.
+
+## Testing
+
+Pure logic (momentum score, plant health, project signals, cohort roll-up) is covered by unit tests in [src/lib/utils.test.ts](src/lib/utils.test.ts):
+
+```bash
+npm test
+```
 
 ## Future improvements
 

@@ -165,11 +165,16 @@ export const GROWTH_REWARDS = {
 
 export type GrowthReward = { water: number; sunshine: number };
 
+/**
+ * Momentum-score label. Deliberately avoids the words "At risk" — that phrase is
+ * reserved for the project *status* / filter (see projectSignals), which means
+ * something different (overdue work or an At Risk status), so the two never clash.
+ */
 export function momentumLabel(score: number) {
   if (score >= 80) return "Strong momentum";
   if (score >= 50) return "On track";
   if (score >= 25) return "Needs attention";
-  return "At risk";
+  return "Losing steam";
 }
 
 export function nextBestAction(project: Project) {

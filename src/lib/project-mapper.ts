@@ -20,6 +20,59 @@ export type DbProject = {
   companion: { water: number; sunshine: number; messages: { id: string; role: string; content: string; createdAt: string }[] } | null;
 };
 
+/**
+ * A project graph safe for the public, signed-out cohort feed. Omits everything
+ * private: raw daily check-in reflections and the builder's 1:1 companion chat.
+ * Only the non-sensitive signals the cohort board renders are included.
+ */
+export type PublicDbProject = {
+  id: string;
+  ownerId: string;
+  owner: { name: string | null } | null;
+  name: string;
+  description: string;
+  goal: string;
+  deadline: string;
+  status: string;
+  createdAt: string;
+  tasks: DbProject["tasks"];
+  milestones: DbProject["milestones"];
+  blockers: DbProject["blockers"];
+  // Check-in timestamps only — the reflection text stays private to the owner.
+  checkIns: { id: string; createdAt: string }[];
+  feedbackRequests: DbProject["feedbackRequests"];
+  focusSessions: DbProject["focusSessions"];
+  // Companion growth counters only — chat messages stay private to the owner.
+  companion: { water: number; sunshine: number } | null;
+};
+
+/**
+ * Map a sanitized project graph for the public cohort board. Blanks the check-in
+ * reflection fields (kept for shape/recency) and drops all companion messages, so
+ * a signed-out visitor never receives another builder's private text.
+ */
+export function toPublicProject(p: PublicDbProject): Project {
+  return {
+    id: p.id,
+    name: p.name,
+    owner: p.owner?.name ?? "Unknown builder",
+    ownerId: p.ownerId,
+    description: p.description,
+    goal: p.goal,
+    deadline: p.deadline,
+    status: p.status as Project["status"],
+    createdAt: p.createdAt,
+    tasks: p.tasks.map((t) => ({ id: t.id, title: t.title, status: t.status as Project["tasks"][number]["status"], dueDate: t.dueDate, priority: t.priority as Project["tasks"][number]["priority"], notes: t.notes ?? undefined })),
+    milestones: p.milestones.map((m) => ({ id: m.id, title: m.title, targetDate: m.targetDate, completed: m.completed })),
+    blockers: p.blockers.map((b) => ({ id: b.id, title: b.title, description: b.description, resolved: b.resolved, createdAt: b.createdAt })),
+    // Recency only — text intentionally blank so momentum/last-check-in still work.
+    checkIns: p.checkIns.map((c) => ({ id: c.id, completedToday: "", stuckOn: "", nextStep: "", feeling: "", createdAt: c.createdAt })),
+    feedbackRequests: p.feedbackRequests.map((f) => ({ id: f.id, topic: f.topic, priority: f.priority as Project["feedbackRequests"][number]["priority"], resolved: f.resolved, createdAt: f.createdAt })),
+    focusSessions: p.focusSessions.map((s) => ({ id: s.id, taskId: s.taskId ?? undefined, taskTitle: s.taskTitle, minutes: s.minutes, completed: s.completed, interrupted: s.interrupted, note: s.note ?? undefined, createdAt: s.createdAt })),
+    companion: { water: p.companion?.water ?? 0, sunshine: p.companion?.sunshine ?? 0, messages: [] },
+  };
+}
+
 /** Map a DB project graph into the app's plain `Project` shape used across the UI. */
 export function toAppProject(p: DbProject): Project {
   return {
