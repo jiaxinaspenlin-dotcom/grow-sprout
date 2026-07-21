@@ -43,7 +43,7 @@ Consequence: "nobody edits anyone else's work" is automatic — editing only eve
 **AI companion — Sprout (core feature)**
 - A chat panel on every project page that receives the full project context (goal, deadline, tasks, overdue work, blockers, feedback, latest check-in, momentum, water/sunshine, focus history).
 - Helps run check-ins, breaks blockers into small steps, recommends the next best action, encourages wins, and suggests focus sessions.
-- Backed by a Next.js API route calling a **local Ollama model** when Ollama is running, with a **rule-based fallback** so the app always works without it.
+- Backed by a Next.js API route calling a **local Ollama model** when Ollama is running, with a **rule-based fallback** so the app always works without it. **On the hosted demo (Vercel is serverless, so there's no Ollama), the companion runs the rule-based coach — not a live LLM.** See [Known limitations](#known-limitations).
 - Chat history persists to Postgres, so the companion remembers across sessions and devices.
 - Never claims to change app data — it tells you which button to press.
 
@@ -177,7 +177,7 @@ The design goal is *momentum*, not just completion: showing up (checking in), do
 
 ## AI companion explanation
 
-Sprout is a project-coach companion pinned to each project page. On each message the client POSTs the project plus recent chat history to `/api/companion`. The route builds a system prompt from a compact project snapshot (goal, deadline, task/blocker/feedback state, latest check-in, momentum, water/sunshine, focus history) and asks a local Ollama model for a short, practical, project-aware reply. If Ollama isn't running — or the call times out — a deterministic rule-based coach answers instead, using the same project state, so the app never breaks. Messages persist to the `ChatMessage` table. The companion is explicitly instructed never to claim it changed app data; it points you to the right button.
+Sprout is a project-coach companion pinned to each project page. On each message the client POSTs the project plus recent chat history to `/api/companion`. The route builds a system prompt from a compact project snapshot (goal, deadline, task/blocker/feedback state, latest check-in, momentum, water/sunshine, focus history) and asks a local Ollama model for a short, practical, project-aware reply. If Ollama isn't running — or the call times out — a deterministic rule-based coach answers instead, using the same project state, so the app never breaks. **This is what the hosted demo uses: serverless has no Ollama, so every live reply comes from the rule-based coach unless `OLLAMA_URL` points at a reachable model host.** Messages persist to the `ChatMessage` table. The companion is explicitly instructed never to claim it changed app data; it points you to the right button.
 
 ## Current status
 
